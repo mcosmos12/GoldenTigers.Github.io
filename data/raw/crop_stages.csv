@@ -1,0 +1,16 @@
+crop,planting_date,stage_id,stage,start_day,end_day,stage_start_date,stage_end_date
+corn,3/5/2025,0,Establishment,0,19,3/5/2025,3/24/2025
+corn,3/5/2025,1,Vegetative,20,52,3/25/2025,4/26/2025
+corn,3/5/2025,2,Flowering,53,70,4/27/2025,5/14/2025
+corn,3/5/2025,3,Yield formation,71,110,5/15/2025,6/23/2025
+corn,3/5/2025,4,Ripening,111,123,6/24/2025,7/6/2025
+cotton,4/12/2025,0,Establishment,0,19,4/12/2025,5/1/2025
+cotton,4/12/2025,1,Vegetative,20,49,5/2/2025,5/31/2025
+cotton,4/12/2025,2,Flowering,50,114,6/1/2025,8/4/2025
+cotton,4/12/2025,3,Yield formation,115,149,8/5/2025,9/8/2025
+cotton,4/12/2025,4,Ripening,150,167,9/9/2025,9/26/2025
+soybean,4/30/2025,0,Establishment,0,9,4/30/2025,5/9/2025
+soybean,4/30/2025,1,Vegetative,10,44,5/10/2025,6/13/2025
+soybean,4/30/2025,2,Flowering,45,74,6/14/2025,7/13/2025
+soybean,4/30/2025,3,Yield formation,75,109,7/14/2025,8/17/2025
+soybean,4/30/2025,4,Ripening,110,122,8/18/2025,8/30/2025

@@ -1,0 +1,8 @@
+system:index,EVI_mean,NDMI_mean,NDRE_mean,NDVI_mean,county,coverage_pct,date,n_scenes,.geo
+0,0.456789564,0.207890509,0.423182103,0.725940674,Macon,100,4/13/2025,4,"{""type"":""MultiPoint"",""coordinates"":[]}"
+1,0.496866311,0.226613408,0.485797163,0.728694371,Macon,100,4/18/2025,4,"{""type"":""MultiPoint"",""coordinates"":[]}"
+2,0.530171532,0.266573275,0.507577348,0.731748422,Macon,91,5/5/2025,2,"{""type"":""MultiPoint"",""coordinates"":[]}"
+5,0.54320671,0.257613153,0.490556773,0.750125188,Macon,100,6/2/2025,4,"{""type"":""MultiPoint"",""coordinates"":[]}"
+7,0.533654813,0.25563808,0.537806345,0.780192628,Macon,94,6/27/2025,2,"{""type"":""MultiPoint"",""coordinates"":[]}"
+10,0.500151847,0.232600644,0.459528801,0.745663768,Macon,99,7/12/2025,4,"{""type"":""MultiPoint"",""coordinates"":[]}"
+11,0.488944523,0.219062597,0.492471939,0.721147238,Macon,98,7/27/2025,3,"{""type"":""MultiPoint"",""coordinates"":[]}"
