@@ -100,7 +100,7 @@ Final Score:  0–39 = 🔴 High Stress · 40–69 = 🟡 Moderate · 70–100 =
 - Integration of additional SCAN stations for spatial soil moisture variability
 - SSURGO/SoilGrids automated soil parameter retrieval
 - Mobile-responsive layout for field use on tablets
-- Develop a automated data pipeline and machine learning model to support scenario planning driven by user inputs.  
+- Develop an automated data pipeline and machine learning model to support scenario planning driven by user inputs.  
 
 
 
