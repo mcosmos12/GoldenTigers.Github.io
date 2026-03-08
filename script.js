@@ -12,14 +12,6 @@ const INDEX_THRESHOLDS = {
   NDRE: { low: 0.2,  mid: 0.3  }
 };
 
-// ── GEOTIFF PATHS & COLOR SCALES ────────────────────────────────
-const TIFF_PATHS = {
-  NDVI: 'data/gee_exports/macon_ndvi_20250727.tif',
-  NDMI: 'data/gee_exports/macon_ndmi_20250727.tif',
-  EVI:  'data/gee_exports/macon_evi_20250727.tif',
-  NDRE: 'data/gee_exports/macon_ndre_20250727.tif'
-};
-
 // Color scales for each index (value → CSS color)
 function ndviColor(v) {
   if (v === null || isNaN(v) || v <= 0) return null; // transparent
@@ -144,8 +136,7 @@ let masterData     = null;
 let timeseriesData = null;
 let soilData       = {};
 let gridCache      = {};
-let tiffCache      = {};      // index name -> georaster object
-let activeTiffLayer = null;
+let activeDotLayer = null;
 let charts         = {};
 
 // ── HELPERS ──────────────────────────────────────────────────────
@@ -170,7 +161,8 @@ function scoreIndex(val, low, mid) {
   if (val < mid) return 50;
   return 100;
 }
-function computeFitnessScore({ ndvi, ndmi, ndre, evi }) {
+function computeFitnessScore({ ndvi, ndmi, ndre, evi }, soilSM, tempMax) {
+  // ── Step 1: ANR-3180 satellite index scores ──────────────────
   const s = [
     scoreIndex(ndvi, INDEX_THRESHOLDS.NDVI.low, INDEX_THRESHOLDS.NDVI.mid),
     scoreIndex(evi,  INDEX_THRESHOLDS.EVI.low,  INDEX_THRESHOLDS.EVI.mid),
@@ -178,7 +170,34 @@ function computeFitnessScore({ ndvi, ndmi, ndre, evi }) {
     scoreIndex(ndre, INDEX_THRESHOLDS.NDRE.low, INDEX_THRESHOLDS.NDRE.mid)
   ].filter(v => v !== null);
   if (!s.length) return null;
-  return Math.round(s.reduce((a,b)=>a+b,0)/s.length);
+  let score = Math.round(s.reduce((a,b)=>a+b,0)/s.length);
+
+  // ── Step 2: FAO-56 soil moisture penalty ────────────────────
+  // Loam soil (Macon County): FC ≈ 0.31, PWP ≈ 0.14
+  // RAW (cotton, p=0.65): stress begins ~0.18 m³/m³
+  // Source: FAO-56 Allen et al. (1998), Table 19 & Annex 2
+  if (soilSM !== null && soilSM !== undefined) {
+    if (soilSM < 0.14) {
+      // Below permanent wilting point — crop cannot recover
+      score = Math.min(score, 35);
+    } else if (soilSM < 0.18) {
+      // Below readily available water — stress actively occurring
+      score = Math.max(0, score - 20);
+    }
+  }
+
+  // ── Step 3: Heat stress penalty ─────────────────────────────
+  // >35°C causes pollen sterility in cotton, reduces photosynthesis
+  // Source: ANR-3180, Auburn ACES
+  if (tempMax !== null && tempMax !== undefined) {
+    if (tempMax > 38) {
+      score = Math.max(0, score - 15);
+    } else if (tempMax > 35) {
+      score = Math.max(0, score - 8);
+    }
+  }
+
+  return Math.max(0, Math.min(100, score));
 }
 function stressFromScore(score) {
   if (score === null) return { label:'Unknown',    color:'#a0926e', emoji:'—',  bg:'#f7f4ee', border:'#ddd5c0' };
@@ -236,46 +255,37 @@ $('clear-draw').addEventListener('click', () => {
   refresh();
 });
 
-// ── GEOTIFF LOADING & DISPLAY ────────────────────────────────────
-async function loadTiff(indexName) {
-  if (tiffCache[indexName]) return tiffCache[indexName];
-  try {
-    const resp = await fetch(TIFF_PATHS[indexName]);
-    if (!resp.ok) throw new Error('not found');
-    const buf  = await resp.arrayBuffer();
-    const georaster = await parseGeoraster(buf);
-    tiffCache[indexName] = georaster;
-    return georaster;
-  } catch (e) {
-    console.warn(`GeoTIFF not found for ${indexName}:`, e.message);
-    return null;
-  }
-}
+// ── DOT HEATMAP FROM GEOJSON ─────────────────────────────────────
+// Colors ~900 grid points by index value using the July 27 GeoJSON.
+// Same color ramps as before. No external libraries needed.
+function showDotLayer(indexName) {
+  if (activeDotLayer) { map.removeLayer(activeDotLayer); activeDotLayer = null; }
 
-async function showTiffLayer(indexName) {
-  // remove old layer
-  if (activeTiffLayer) { map.removeLayer(activeTiffLayer); activeTiffLayer = null; }
-
-  const georaster = await loadTiff(indexName);
-  if (!georaster) return;
+  const grid = gridCache[selectedDate];
+  if (!grid || !grid.features || !grid.features.length) return;
 
   const colorFn = INDEX_COLOR_FN[indexName];
-  activeTiffLayer = new GeoRasterLayer({
-    georaster,
-    opacity: 0.75,
-    pixelValuesToColorFn: values => {
-      const v = values[0];
-      if (v === null || v === undefined || isNaN(v)) return null;
-      return colorFn(v);
-    },
-    resolution: 256
-  });
-  activeTiffLayer.addTo(map);
-  activeTiffLayer.bringToBack();
 
-  // update legend
+  activeDotLayer = L.geoJSON(grid, {
+    pointToLayer: (feature, latlng) => {
+      const val   = feature.properties[indexName] ?? feature.properties[indexName + '_mean'] ?? null;
+      const color = colorFn(val) || 'transparent';
+      return L.circleMarker(latlng, {
+        radius:      6,
+        fillColor:   color,
+        fillOpacity: 0.75,
+        stroke:      false
+      });
+    }
+  });
+
+  activeDotLayer.addTo(map);
+  activeDotLayer.bringToBack();
   updateLegend(indexName);
 }
+
+// alias so index button handler still works
+function showTiffLayer(indexName) { showDotLayer(indexName); }
 
 function updateLegend(indexName) {
   const el = $('map-legend');
@@ -308,6 +318,7 @@ function buildSlider() {
       document.querySelectorAll('.date-pill').forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
       $('header-date-display').textContent = d;
+      showDotLayer(selectedIdx);
       await refresh();
     });
     container.appendChild(pill);
@@ -685,37 +696,134 @@ function renderTimeline() {
 }
 
 // ── AI NOTE ───────────────────────────────────────────────────────
-function buildNote(signals, masterRow, score, stress, complete) {
+// ── CROPWIZARD AI INTEGRATION ─────────────────────────────────────
+const CROPWIZARD_API_KEY  = 'uc_3fc20373173944c09d0ee8a0b62af79c';
+const CROPWIZARD_ENDPOINT = 'https://uiuc.chat/api/chat-api/chat';
+
+function buildPrompt(signals, masterRow, score, stress, complete) {
   if (complete) {
-    return [
+    return `The ${selectedCrop} crop in Macon County, Alabama has completed its season and been harvested. 
+What should the farmer focus on now for field recovery, cover cropping, and preparation for next season?
+Keep the response brief and practical — 3 to 4 sentences maximum.`;
+  }
+
+  const stage = masterRow?.[STAGE_COL[selectedCrop]] ?? 'Unknown';
+  const cwr   = masterRow?.[CWR_COL[selectedCrop]]?.toFixed(1) ?? 'unknown';
+  const soil  = soilData[selectedDate]?.toFixed(3) ?? 'unknown';
+  const temp  = masterRow?.temp_max_C ?? 'unknown';
+
+  return `You are advising a farmer in Macon County, Alabama on ${selectedDate}.
+
+Crop: ${selectedCrop} — currently in ${stage} stage
+Crop Fitness Score: ${score}/100 — ${stress.label}
+NDVI: ${signals?.ndvi??'--'} | NDMI: ${signals?.ndmi??'--'} | EVI: ${signals?.evi??'--'} | NDRE: ${signals?.ndre??'--'}
+Soil Moisture (20cm): ${soil} m³/m³ | Crop Water Requirement: ${cwr} mm/day | Max Temp: ${temp}°C
+
+Based on these field conditions, give a concise irrigation and crop management recommendation.
+Focus on: (1) whether to irrigate and when, (2) any stress risks at this growth stage, (3) one practical action step.
+Keep it to 3-4 sentences. Write directly to the farmer in plain language.`;
+}
+
+async function fetchCropWizardNote(signals, masterRow, score, stress, complete) {
+  const noteEl = $('ai-note');
+  noteEl.textContent = 'Generating field assessment…';
+
+  // season complete — no API call needed
+  if (complete) {
+    noteEl.textContent = [
       `${selectedCrop.toUpperCase()} — Season Complete`,
       ``,
       `This crop has been harvested. No active irrigation decisions needed.`,
-      `Review field residue condition and begin planning cover crop or`,
-      `next season inputs based on observed soil moisture levels.`
+      `Review field residue and plan cover crops or next season inputs`,
+      `based on current soil moisture levels.`
+    ].join('\n');
+    return;
+  }
+
+  const prompt = buildPrompt(signals, masterRow, score, stress, complete);
+
+  try {
+    const resp = await fetch(CROPWIZARD_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are CropWizard, an AI farm advisor with expertise in Alabama row crops. 
+Give concise, practical advice to farmers. Always answer farming questions directly.
+When soil moisture is below 0.14 m³/m³ or crop fitness score is below 40, always recommend urgent irrigation.`
+          },
+          { role: 'user', content: prompt }
+        ],
+        api_key: CROPWIZARD_API_KEY,
+        course_name: 'cropwizard-1.5',
+        stream: false,
+        temperature: 0.1,
+        retrieval_only: false
+      })
+    });
+
+    if (!resp.ok) throw new Error(`API error: ${resp.status}`);
+    const data = await resp.json();
+
+    // extract text from response
+    const text = data?.choices?.[0]?.message?.content
+              || data?.message?.content
+              || data?.content
+              || null;
+
+    if (text) {
+      // prepend the data summary header
+      const stage = masterRow?.[STAGE_COL[selectedCrop]] ?? 'Unknown';
+      const cwr   = masterRow?.[CWR_COL[selectedCrop]]?.toFixed(1) ?? '--';
+      const soil  = soilData[selectedDate]?.toFixed(3) ?? '--';
+      const temp  = masterRow?.temp_max_C ?? '--';
+      noteEl.textContent = [
+        `${selectedCrop.charAt(0).toUpperCase()+selectedCrop.slice(1)} · ${stage} · ${selectedDate}`,
+        `Fitness Score: ${score}/100 — ${stress.label}`,
+        `NDVI: ${signals?.ndvi??'--'} · NDMI: ${signals?.ndmi??'--'} · EVI: ${signals?.evi??'--'} · NDRE: ${signals?.ndre??'--'}`,
+        `Soil: ${soil} m³/m³ · CWR: ${cwr} mm/day · T-max: ${temp}°C`,
+        ``,
+        text.trim()
+      ].join('\n');
+    } else {
+      throw new Error('Empty response');
+    }
+
+  } catch (err) {
+    console.warn('CropWizard API failed:', err.message);
+    // fallback to rule-based note
+    const stage = masterRow?.[STAGE_COL[selectedCrop]] ?? 'Unknown';
+    const cwr   = masterRow?.[CWR_COL[selectedCrop]]?.toFixed(1) ?? '--';
+    const soil  = soilData[selectedDate]?.toFixed(3) ?? '--';
+    const temp  = masterRow?.temp_max_C ?? '--';
+    let rec = '';
+    if (score < 40)      rec = `⚠ IRRIGATE WITHIN 24 HOURS. Severe moisture stress detected during ${stage}.`;
+    else if (score < 70) rec = `Monitor closely. Moderate stress in ${stage}. Consider irrigation within 48–72 hours.`;
+    else                 rec = `Crop condition is healthy. Continue current management. Re-assess in 5–7 days.`;
+    noteEl.textContent = [
+      `${selectedCrop.charAt(0).toUpperCase()+selectedCrop.slice(1)} · ${stage} · ${selectedDate}`,
+      `Fitness Score: ${score}/100 — ${stress.label}`,
+      `NDVI: ${signals?.ndvi??'--'} · NDMI: ${signals?.ndmi??'--'} · EVI: ${signals?.evi??'--'} · NDRE: ${signals?.ndre??'--'}`,
+      `Soil: ${soil} m³/m³ · CWR: ${cwr} mm/day · T-max: ${temp}°C`,
+      ``, rec
     ].join('\n');
   }
-  if (score === null) return 'Insufficient satellite data for this date.';
-
-  const stage = masterRow?.[STAGE_COL[selectedCrop]] ?? 'Unknown';
-  const cwr   = masterRow?.[CWR_COL[selectedCrop]]?.toFixed(1) ?? '--';
-  const soil  = soilData[selectedDate]?.toFixed(3) ?? '--';
-  const temp  = masterRow?.temp_max_C ?? '--';
-
-  let rec = '';
-  if (score < 40)      rec = `⚠ IRRIGATE WITHIN 24 HOURS. Severe moisture stress detected during ${stage}. Delayed action risks irreversible yield loss at this growth stage.`;
-  else if (score < 70) rec = `Monitor closely. Moderate stress detected in ${stage}. Consider irrigation within 48–72 hours if soil moisture continues to decline below 0.15 m³/m³.`;
-  else                 rec = `Crop condition is healthy. Continue current management. Re-assess in 5–7 days or after any extended dry period.`;
-
-  return [
-    `${selectedCrop.charAt(0).toUpperCase()+selectedCrop.slice(1)} · ${stage} · ${selectedDate}`,
-    `Fitness Score: ${score}/100 — ${stress.label}`,
-    `NDVI: ${signals?.ndvi??'--'} · NDMI: ${signals?.ndmi??'--'} · EVI: ${signals?.evi??'--'} · NDRE: ${signals?.ndre??'--'}`,
-    `Soil: ${soil} m³/m³ · CWR: ${cwr} mm/day · T-max: ${temp}°C`,
-    ``,
-    rec
-  ].join('\n');
 }
+
+// ── DOWNLOAD BUTTON (from teammate) ──────────────────────────────
+document.getElementById('download-btn')?.addEventListener('click', () => {
+  const assessmentText = $('ai-note').textContent;
+  if (!assessmentText) return;
+  const blob = new Blob([assessmentText], { type: 'text/plain' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `field_assessment_${selectedCrop}_${selectedDate}.txt`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+});
 
 $('ai-refresh').addEventListener('click', () => refresh());
 
@@ -733,14 +841,17 @@ async function refresh() {
     signals = countyMeanForDate(selectedDate);
   }
 
-  const score  = complete ? null : computeFitnessScore(signals);
+  const soil    = soilData[selectedDate] ?? null;
+  const tempMax = masterRow?.temp_max_C ?? null;
+
+  const score  = complete ? null : computeFitnessScore(signals, soil, tempMax);
   const stress = stressFromScore(score);
 
   setGauge(score, stress);
   renderVitals(signals, masterRow, complete);
   renderTimeline();
   updateCWRChart();
-  $('ai-note').textContent = buildNote(signals, masterRow, score, stress, complete);
+  fetchCropWizardNote(signals, masterRow, score, stress, complete);
 }
 
 // ── INIT ──────────────────────────────────────────────────────────
@@ -751,39 +862,10 @@ async function refresh() {
   buildCharts();
   await refresh();
 
-  // Hide loading overlay — dashboard is ready
+  // Grids are already in memory — dot layer renders instantly
+  showDotLayer('NDVI');
+
   const overlay = $('loading-overlay');
   overlay.style.opacity = '0';
   setTimeout(() => overlay.remove(), 400);
-
-  // Load GeoTIFF in background AFTER dashboard is visible
-  // so it never blocks the UI
-  showTiffLayer('NDVI').catch(e => console.warn('GeoTIFF load failed:', e));
 })();
-
-// Button functionality for downloading the assessment to downloads
-document.getElementById('download-btn').addEventListener('click', () => {
-  const complete = isSeasonComplete(selectedCrop, selectedDate);
-  const masterRow = masterRowForDate(selectedDate);
-  let signals = null;
-
-  if (lastPolygon) {
-    signals = avgIndicesForPolygon(lastPolygon, selectedDate);
-  }
-
-  if (!signals) {
-    signals = countyMeanForDate(selectedDate);
-  }
-
-  const score = complete ? null : computeFitnessScore(signals);
-  const stress = stressFromScore(score);
-  
-  const assessmentText = buildNote(signals, masterRow, score, stress, complete);
-
-  const blob = new Blob([assessmentText], { type: 'text/plain' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'field_assessment.txt';
-  link.click();
-  URL.revokeObjectURL(link.href);
-});
