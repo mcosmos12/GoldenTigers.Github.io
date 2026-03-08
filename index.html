@@ -11,10 +11,6 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
 
-  <!-- GeoRaster for GeoTIFF rendering in Leaflet -->
-  <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
-  <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
@@ -74,15 +70,16 @@
         </div>
         <div id="vitals" class="vitals-list"></div>
         <div class="ai-card">
-          <div class="ai-card">
-  <div class="ai-card-header">
-    <span>📋 Field Assessment</span>
-    <button id="ai-refresh" class="ai-btn">Refresh</button>
-  </div>
-  <div id="ai-note" class="ai-note-text">Select a crop and draw a field boundary to generate the agronomic assessment.</div>
-  <button id="download-btn" class="ai-btn">Download Assessment</button>
-</div>
-        <div class="citation">Nguyen et al. (2025) · ANR-3180 · Auburn Cooperative Extension</div>
+          <div class="ai-card-header">
+            <span>📋 Field Assessment</span>
+            <div style="display:flex;gap:6px;">
+              <button id="ai-refresh" class="ai-btn">Refresh</button>
+              <button id="download-btn" class="ai-btn" style="background:#6b5a3e;">⬇ Save</button>
+            </div>
+          </div>
+          <div id="ai-note" class="ai-note-text">Select a crop and draw a field boundary to generate the agronomic assessment.</div>
+        </div>
+
       </section>
 
       <!-- CENTER -->
