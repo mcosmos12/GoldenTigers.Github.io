@@ -1,71 +1,128 @@
-# Crop Vitals - Field Health Monitoring System
+# 🌾 Crop Vitals — Field Diagnostic System
+### Macon County, Alabama · 2025 Growing Season
 
- 🌱 Overview
-Crop Vitals is an interactive agricultural monitoring concept that helps farmers quickly identify plant stress using immersive visualization. 
+Crop Vitals is an interactive field health monitoring dashboard that helps Alabama farmers and extension agents detect crop stress **before visible symptoms appear**. By fusing satellite remote sensing, in-situ soil moisture, and weather data into a single Crop Fitness Score, the system supports earlier, more confident irrigation decisions.
 
-The system simulates plant‑health metrics such as:
-- Soil moisture
-- Sunlight exposure
-- Nutrient levels
-- NDVI / NDVE vegetation indices
+---
 
-These inputs are processed and visualized as stress indicators inside a virtual farm environment.
+## 🚜 Problem
 
- 🚜 Problem
-Farmers often struggle to detect plant stress early, especially in large crop fields. Stress caused by drought, poor soil nutrient availability, and environmental conditions is frequently discovered too late, reducing yield and crop quality. Traditional monitoring is slow, manual, and lacks real‑time insights.
+Farmers in the Alabama Black Belt typically detect moisture stress **2–3 days after** visible wilting symptoms appear — by which point 15–25% of preventable yield loss has already occurred. Traditional county-level advisories lack the spatial precision needed for field-level decisions.
 
- 🌾 Solution
-Crop Vitals visualizes plant data in an immersive virtual environment with:
-- 3D plant models
-- Color‑coded health indicators
-- Real-time stress simulation
-- Interactive diagnostic pop‑ups
-- Optional analytics dashboard
+---
 
-  Color Coding:
-- 🟢 Green – Healthy
-- 🟡 Yellow – Mild Stress
-- 🔴 Red – High Stress
+## 🌱 Solution
 
-Users can click or tap plants to reveal detailed health metrics.
+Crop Vitals monitors crop health using **seven vital signs** updated across 7 cloud-free Sentinel-2 acquisition dates (April–July 2025):
 
- 🛠️ Technologies Used
-  Core System:
-- 🧱 CoBlocks VR for immersive environment design
-- 🟨 JavaScript for dashboard and simulation logic
-- 🎨 HTML/CSS for UI layout and styling
-- 🐍 Python for stress‑score simulation
-- 🔗 GitHub for version control
+| Signal | Source | Role |
+|---|---|---|
+| NDVI | Sentinel-2 via GEE | Canopy greenness / photosynthetic activity |
+| NDMI | Sentinel-2 via GEE | Canopy water content |
+| EVI | Sentinel-2 via GEE | Dense canopy health |
+| NDRE | Sentinel-2 via GEE | Chlorophyll / nitrogen status |
+| Soil Moisture | USDA SCAN #2115 Tuskegee AL | Root zone water availability |
+| Crop Water Requirement | FAO-56 Penman-Monteith | Daily water demand (ET₀ × Kc) |
+| Temperature | NASA POWER | Heat stress indicator |
 
-Optional Enhancements:
-- 📊 Chart.js for visualization
-- 📁 JSON datasets for mock plant data
+These signals are combined into a **Crop Fitness Score (0–100)** using agronomic thresholds from ANR-3180 (Auburn Cooperative Extension) and FAO-56 soil moisture penalty rules.
 
- 🔍 How the System Works
-Each plant object contains agricultural condition variables:
-```json
-{
-  "plants": [
-    {
-      "name": "Plant A",
-      "soilMoisture": 65,
-      "sunlight": 80,
-      "nutrients": 70
-    },
-    {
-      "name": "Plant B",
-      "soilMoisture": 40,
-      "sunlight": 55,
-      "nutrients": 50
-    }
-  ]
-}
+---
+
+## 🛠️ Technologies
+
+| Layer | Tools |
+|---|---|
+| Satellite data | Google Earth Engine (Sentinel-2 SR Harmonized) |
+| Weather data | NASA POWER API |
+| Soil moisture | USDA SCAN Station #2115, Tuskegee AL |
+| ET₀ / CWR | FAO-56 Penman-Monteith (Python / pyeto) |
+| Frontend | HTML · CSS · JavaScript |
+| Mapping | Leaflet.js · Leaflet.draw · Turf.js |
+| Charts | Chart.js |
+| Data parsing | PapaParse |
+| AI assessment | CropWizard API (UIUC) — cropwizard-1.5 |
+| Version control | GitHub |
+
+---
+
+## 📊 Scoring Engine
+
 ```
-The system computes a stress score based on threshold rules and vegetation index values. The VR environment loads these values dynamically for visualization.
+Step 1 — ANR-3180 satellite index thresholds (raw values, no normalization)
+  NDVI: stressed < 0.4 · healthy ≥ 0.6
+  NDMI: stressed < 0.2 · healthy ≥ 0.4
+  EVI:  stressed < 0.15 · healthy ≥ 0.40
+  NDRE: stressed < 0.2 · healthy ≥ 0.3
 
- 🚀 Future Improvements
-- Integration with drone imaging for real NDVI/thermal data
-- IoT sensor network support
-- AI‑powered plant disease detection
-- Mobile AR crop inspection
-- Full farm‑scale health mapping
+Step 2 — FAO-56 soil moisture penalty (loam soil, Macon County)
+  SM < 0.14 m³/m³ → below permanent wilting point → cap score at 35
+  SM < 0.18 m³/m³ → below readily available water → subtract 20
+
+Step 3 — Heat stress penalty (ANR-3180)
+  Temp > 38°C → subtract 15
+  Temp > 35°C → subtract 8
+
+Final Score:  0–39 = 🔴 High Stress · 40–69 = 🟡 Moderate · 70–100 = 🟢 Healthy
+```
+
+---
+
+## 🗂️ Data Sources
+
+| Source | Variable | Coverage |
+|---|---|---|
+| Sentinel-2 SR Harmonized (GEE) | NDVI, NDMI, EVI, NDRE | Macon County · 7 dates · Apr–Jul 2025 |
+| NASA POWER API | T2M, RH2M, WS2M, Radiation, Precip | Daily · Apr 12–Jul 30, 2025 |
+| USDA SCAN #2115 Tuskegee AL | Soil moisture at 20cm depth | Daily · Apr 12–Jul 30, 2025 |
+| FAO-56 (calculated) | ET₀, CWR per crop | Daily derived |
+| USDA TIGER / GEE Asset | Macon County boundary | Static |
+
+---
+
+## 🌍 Dashboard Features
+
+- **Date slider** — step through 7 Sentinel-2 acquisition dates to track seasonal progression
+- **Crop selector** — Cotton · Corn · Soybean with crop-specific stage calendars and Kc values
+- **Spatial dot layer** — ~900 sampled grid points colored by selected index (NDVI / NDMI / EVI / NDRE)
+- **Field polygon tool** — draw a boundary on the map to calculate field-specific fitness score via point-in-polygon
+- **ECG vital signs** — seven animated signal indicators with color-coded stress status
+- **AI field assessment** — CropWizard (UIUC) generates agronomic recommendations from Extension knowledge base
+- **Download button** — export field assessment as `.txt` file
+- **Season Complete logic** — corn automatically transitions to harvested state after July 6
+
+---
+
+## 🌽 Crops Covered
+
+| Crop | Planted | Critical Window | Season End |
+|---|---|---|---|
+| Cotton | Apr 12, 2025 | Flowering Jun 1–Aug 4 | Sep 26, 2025 |
+| Corn | Mar 5, 2025 | Yield Formation May 15–Jun 23 | Jul 6, 2025 |
+| Soybean | Apr 30, 2025 | Yield Formation Jul 14–Aug 17 | Aug 30, 2025 |
+
+---
+
+## 🚀 Future Work
+
+- Continuous raster rendering (full 10m Sentinel-2 GeoTIFF) replacing sampled dot layer
+- Automated daily GEE export pipeline for real-time updates
+- Integration of additional SCAN stations for spatial soil moisture variability
+- SSURGO/SoilGrids automated soil parameter retrieval
+- Streamlit-based GIS dashboard with Folium/Leaflet integration
+- Transfer learning for bias-corrected GEFS ensemble soil moisture forecasts
+- Mobile-responsive layout for field use on tablets
+
+---
+
+## 📚 References
+
+- Allen, R.G. et al. (1998). *FAO Irrigation and Drainage Paper 56*. FAO, Rome.
+- Nguyen, K. et al. (2025). *ANR-3180*. Alabama Cooperative Extension System, Auburn University.
+- NASA POWER Project. https://power.larc.nasa.gov
+- USDA NRCS SCAN. Station #2115, Tuskegee AL. https://wcc.sc.egov.usda.gov
+- ESA Sentinel-2 Mission. Copernicus Open Access Hub.
+
+---
+
+*Built for the 2025 Agricultural AI Hackathon · Team Golden Tigers · Auburn University*
