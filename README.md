@@ -1,19 +1,22 @@
-# 🌾 Crop Vitals — Field Diagnostic System
-### Macon County, Alabama · 2025 Growing Season
+# 🌾 Crop Vitals — A Decision Support Tool
+### Study Area: Macon County, Alabama · 2025 Growing Season
 
-Crop Vitals is an interactive field health monitoring dashboard that helps Alabama farmers and extension agents detect crop stress **before visible symptoms appear**. By fusing satellite remote sensing, in-situ soil moisture, and weather data into a single Crop Fitness Score, the system supports earlier, more confident irrigation decisions.
+Crop Vitals is an interactive field health monitoring dashboard that helps farmers and extension agents detect crop stress **before visible symptoms appear**. By fusing satellite remote sensing, in-situ soil moisture, and weather data into a single Crop Fitness Score, the system supports earlier, more confident decisions.
 
----
+
 
 ## 🚜 Problem
 
-Farmers in the Alabama Black Belt typically detect moisture stress **2–3 days after** visible wilting symptoms appear — by which point 15–25% of preventable yield loss has already occurred. Traditional county-level advisories lack the spatial precision needed for field-level decisions.
+Challenge 1: Integrated operational dashboard with decision-ready alerts
+Prompt: How can we integrate multiple data sources into a dashboard that prioritizes attention 
+and supports daily decisions?
 
----
+Farmers typically detect moisture stress **2–3 days after** visible wilting symptoms appear — by which point 15–25% of preventable yield loss has already occurred. Traditional county-level advisories lack the spatial precision needed for field-level decisions.
+
 
 ## 🌱 Solution
 
-Crop Vitals monitors crop health using **seven vital signs** updated across 7 cloud-free Sentinel-2 acquisition dates (April–July 2025):
+Crop Vitals monitors crop health using **seven vital signs** updated across cloud-free Sentinel-2 acquisition dates:
 
 | Signal | Source | Role |
 |---|---|---|
@@ -27,7 +30,7 @@ Crop Vitals monitors crop health using **seven vital signs** updated across 7 cl
 
 These signals are combined into a **Crop Fitness Score (0–100)** using agronomic thresholds from ANR-3180 (Auburn Cooperative Extension) and FAO-56 rules.
 
----
+
 
 ## 🛠️ Technologies
 
@@ -44,7 +47,7 @@ These signals are combined into a **Crop Fitness Score (0–100)** using agronom
 | AI assessment | CropWizard API (UIUC) — cropwizard-1.5 |
 | Version control | GitHub |
 
----
+
 
 ## 📊 Scoring Engine
 
@@ -66,19 +69,19 @@ Step 3 — Heat stress penalty
 Final Score:  0–39 = 🔴 High Stress · 40–69 = 🟡 Moderate · 70–100 = 🟢 Healthy
 ```
 
----
+
 
 ## 🗂️ Data Sources
 
 | Source | Variable | Coverage |
 |---|---|---|
 | Sentinel-2 SR Harmonized (GEE) | NDVI, NDMI, EVI, NDRE | Macon County · 7 dates · Apr–Jul 2025 |
-| NASA POWER API | T2M, RH2M, WS2M, Radiation, Precip | Daily · Apr 12–Jul 30, 2025 |
-| USDA SCAN #2115 Tuskegee AL | Soil moisture at 20cm depth | Daily · Apr 12–Jul 30, 2025 |
+| NASA POWER API | T2M, RH2M, WS2M, Radiation, Precip | Daily · Apr –Jul 30, 2025 |
+| USDA SCAN #2115 Tuskegee AL | Soil moisture at 20cm depth | Daily · Apr –Jul 30, 2025 |
 | FAO-56 (calculated) | ET₀, CWR per crop | Daily derived |
 | USDA TIGER / GEE Asset | Macon County boundary | Static |
 
----
+
 
 ## 🌍 Dashboard Features
 
@@ -95,13 +98,13 @@ Final Score:  0–39 = 🔴 High Stress · 40–69 = 🟡 Moderate · 70–100 =
 
 ## 🌽 Crops Covered
 
-| Crop | Planted | Critical Window | Season End |
+| Crop | Planted | Season End |
 |---|---|---|---|
-| Cotton | Apr 12, 2025 | Flowering Jun 1–Aug 4 | Sep 26, 2025 |
-| Corn | Mar 5, 2025 | Yield Formation May 15–Jun 23 | Jul 6, 2025 |
-| Soybean | Apr 30, 2025 | Yield Formation Jul 14–Aug 17 | Aug 30, 2025 |
+| Cotton | Apr 12, 2025 | Sep 26, 2025 |
+| Corn | Mar 5, 2025 | Jul 6, 2025 |
+| Soybean | Apr 30, 2025 | Aug 30, 2025 |
 
----
+
 
 ## 🚀 Future Work
 
