@@ -118,3 +118,5 @@ Nguyen, A., Sharma, A., & Prasad, R. (2025). Understanding Vegetation Indices Us
 ---
 
 *2026 CDA Hackathon · Team Golden Tigers · Tuskegee University*
+
+*Precision & Digital Agriculture Hackathon hosted by the Center for Digital Agriculture @ Univ. of Illinois Urbana-Champaign*
