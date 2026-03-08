@@ -29,7 +29,7 @@ Crop Vitals monitors crop health using **seven vital signs** updated across clou
 | Temperature | NASA POWER | Heat stress indicator |
 
 These signals are combined into a **Crop Fitness Score (0–100)** using agronomic thresholds from ANR-3180 (Auburn Cooperative Extension) and FAO-56 rules.
-
+Crops covered include Cotton, Corn and Soybean
 
 
 ## 🛠️ Technologies
@@ -93,18 +93,6 @@ Final Score:  0–39 = 🔴 High Stress · 40–69 = 🟡 Moderate · 70–100 =
 - **AI field assessment** — CropWizard (UIUC) generates agronomic recommendations from Extension knowledge base
 - **Download button** — export field assessment as `.txt` file
 - **Season Complete logic** — an out-of-season crop can automatically transition to the harvested state 
-
-
-
-## 🌽 Crops Covered
-
-| Crop | Planted | Season End |
-|---|---|---|---|
-| Cotton | Apr 12, 2025 | Sep 26, 2025 |
-| Corn | Mar 5, 2025 | Jul 6, 2025 |
-| Soybean | Apr 30, 2025 | Aug 30, 2025 |
-
-
 
 ## 🚀 Future Work
 
