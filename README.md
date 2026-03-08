@@ -1,7 +1,7 @@
 # 🌾 Crop Vitals — A Decision Support Tool
 ### Study Area: Macon County, Alabama · 2025 Growing Season
 
-Crop Vitals is an interactive field health monitoring dashboard that helps farmers and extension agents detect crop stress **before visible symptoms appear**. By fusing satellite remote sensing, in-situ soil moisture, and weather data into a single Crop Fitness Score, the system supports earlier, more confident decisions.
+Crop Vitals is an interactive field health monitoring dashboard that helps farmers and extension agents detect crop stress **before visible symptoms appear**. By fusing satellite remote sensing, in-situ soil moisture, and weather data into a single Crop Vitals Score, the system supports earlier, more confident decisions.
 
 
 
@@ -87,7 +87,7 @@ Final Score:  0–39 = 🔴 High Stress · 40–69 = 🟡 Moderate · 70–100 =
 - **Date slider** — step through 7 Sentinel-2 acquisition dates to track seasonal progression
 - **Crop selector** — Cotton · Corn · Soybean with crop-specific stage calendars and Kc values
 - **Spatial dot layer** — ~900 sampled grid points colored by selected index (NDVI / NDMI / EVI / NDRE)
-- **Field polygon tool** — draw a boundary on the map to calculate field-specific fitness score via point-in-polygon
+- **Field polygon tool** — draw a boundary on the map to calculate field-specific vitals score via point-in-polygon
 - **ECG vital signs** — seven signal indicators with color-coded stress status
 - **AI field assessment** — CropWizard (UIUC) generates agronomic recommendations from Extension knowledge base
 - **Download button** — export field assessment as `.txt` file
