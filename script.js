@@ -761,7 +761,7 @@ async function refresh() {
   showTiffLayer('NDVI').catch(e => console.warn('GeoTIFF load failed:', e));
 })();
 
-// Button functionality for downloading the assessment
+// Button functionality for downloading the assessment to downloads
 document.getElementById('download-btn').addEventListener('click', () => {
   const complete = isSeasonComplete(selectedCrop, selectedDate);
   const masterRow = masterRowForDate(selectedDate);
