@@ -3,85 +3,141 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Crop Fitness Tracker — Demo</title>
+  <title>Crop Vitals — Macon County, AL</title>
 
-  <!-- Leaflet CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <!-- Leaflet Draw CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-  <!-- Chart.js -->
+
+  <!-- GeoRaster for GeoTIFF rendering in Leaflet -->
+  <script src="https://unpkg.com/georaster@1.6.0/dist/georaster.browser.bundle.min.js"></script>
+  <script src="https://unpkg.com/georaster-layer-for-leaflet@3.10.0/dist/georaster-layer-for-leaflet.min.js"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
-  <!-- PapaParse for CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <!-- Turf -->
   <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- Leaflet Draw -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="app">
+
     <header>
-      <h1>Crop Fitness Tracker — Demo (July 15, 2025)</h1>
-      <div id="citation">Source: Nguyen et al. (2025). ANR-3180, Alabama Cooperative Extension System.</div>
+      <div class="header-left">
+        <div class="header-logo">
+          <span class="logo-leaf">🌾</span>
+          <div>
+            <div class="logo-title">Crop Vitals</div>
+            <div class="logo-sub">Macon County, Alabama · Field Diagnostic System</div>
+          </div>
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="crop-selector">
+          <button class="crop-btn active" data-crop="cotton">Cotton</button>
+          <button class="crop-btn" data-crop="corn">Corn</button>
+          <button class="crop-btn" data-crop="soybean">Soybean</button>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-date-block">
+          <div class="header-date-label">Viewing Date</div>
+          <div id="header-date-display" class="header-date-value">2025-07-27</div>
+        </div>
+        <div class="live-dot"></div>
+      </div>
     </header>
 
+    <div class="slider-bar">
+      <span class="slider-label">Season Timeline →</span>
+      <div class="slider-dates" id="slider-dates"></div>
+    </div>
+
     <main class="three-panel">
-      <!-- Left Panel: Vital Signs & AI Note -->
+
+      <!-- LEFT -->
       <section id="left-panel" class="panel">
-        <div class="gauge-card">
-          <div id="fitness-gauge" class="gauge">--</div>
-          <div id="stress-badge" class="badge">--</div>
+        <div class="panel-title">Vital Signs Monitor</div>
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 200 120">
+            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#ede8dc" stroke-width="14" stroke-linecap="round"/>
+            <path id="gauge-arc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#2d6a2d"
+              stroke-width="14" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251"/>
+            <text x="100" y="88" text-anchor="middle" id="gauge-number" class="gauge-number">--</text>
+            <text x="100" y="108" text-anchor="middle" class="gauge-sublabel">FITNESS SCORE</text>
+          </svg>
+          <div id="stress-badge" class="stress-badge">— —</div>
         </div>
-
-        <div id="vitals" class="vitals">
-          <!-- vitals injected by JS -->
-        </div>
-
+        <div id="vitals" class="vitals-list"></div>
         <div class="ai-card">
-          <h3>Attending Physician Note</h3>
-          <pre id="ai-note">Draw a field or select a crop to generate the note.</pre>
-          <button id="ai-refresh">Generate Note (stub)</button>
+          <div class="ai-card-header">
+            <span>📋 Field Assessment</span>
+            <button id="ai-refresh" class="ai-btn">Refresh</button>
+          </div>
+          <div id="ai-note" class="ai-note-text">Select a crop and draw a field boundary to generate the agronomic assessment.</div>
         </div>
+        <div class="citation">Nguyen et al. (2025) · ANR-3180 · Auburn Cooperative Extension</div>
       </section>
 
-      <!-- Center Panel: Map -->
-      <section id="center-panel" class="panel">
-        <div id="map" style="height:560px;"></div>
+      <!-- CENTER -->
+      <section id="center-panel" class="panel panel-map">
+        <div class="panel-title">
+          Diagnostic Imaging
+          <span class="sat-badge">Imagery: Jul 27, 2025</span>
+          <span class="pts-badge" id="field-pts-badge" style="display:none"></span>
+        </div>
+        <div id="map"></div>
         <div class="map-controls">
-          <label>Index layer:
-            <select id="index-switch">
-              <option value="NDVI">NDVI</option>
-              <option value="NDMI">NDMI</option>
-              <option value="EVI">EVI</option>
-              <option value="NDRE">NDRE</option>
-            </select>
-          </label>
-          <span id="sat-date">Satellite: 2025-07-27</span>
-          <button id="clear-draw">Clear Field</button>
+          <div class="index-btns">
+            <button class="idx-btn active" data-idx="NDVI">NDVI</button>
+            <button class="idx-btn" data-idx="NDMI">NDMI</button>
+            <button class="idx-btn" data-idx="EVI">EVI</button>
+            <button class="idx-btn" data-idx="NDRE">NDRE</button>
+          </div>
+          <div class="map-legend" id="map-legend"></div>
+          <button id="clear-draw" class="clear-btn">✕ Clear Field</button>
         </div>
       </section>
 
-      <!-- Right Panel: Vital History charts -->
+      <!-- RIGHT -->
       <section id="right-panel" class="panel">
-        <h3>Vital History (County / Field)</h3>
-        <canvas id="ndvi-chart" height="120"></canvas>
-        <canvas id="ndmi-chart" height="120"></canvas>
-        <canvas id="cwr-chart"  height="120"></canvas>
-
-        <div id="growth-timeline" class="timeline">
-          <h4>Crop Growth Timeline (hard-coded)</h4>
-          <div id="timeline-render"></div>
+        <div class="panel-title">Vital History</div>
+        <div class="chart-block">
+          <div class="chart-label">NDVI <span class="chart-unit">canopy greenness</span></div>
+          <div class="chart-wrap"><canvas id="ndvi-chart"></canvas></div>
+        </div>
+        <div class="chart-block">
+          <div class="chart-label">NDMI <span class="chart-unit">canopy moisture</span></div>
+          <div class="chart-wrap"><canvas id="ndmi-chart"></canvas></div>
+        </div>
+        <div class="chart-block">
+          <div class="chart-label">Crop Water Requirement <span class="chart-unit">mm/day</span></div>
+          <div class="chart-wrap"><canvas id="cwr-chart"></canvas></div>
+        </div>
+        <div class="chart-block">
+          <div class="chart-label">Precipitation <span class="chart-unit">mm/day</span></div>
+          <div class="chart-wrap"><canvas id="precip-chart"></canvas></div>
+        </div>
+        <div class="timeline-block">
+          <div class="chart-label">Growth Stage Timeline</div>
+          <div id="timeline-render" class="timeline-render"></div>
         </div>
       </section>
+
     </main>
 
     <footer>
-      <small>Demo date: July 15, 2025 • Data read from data/processed/ and data/gee_exports/ (local)</small>
+      <small>Data: NASA POWER · Sentinel-2 via Google Earth Engine · USDA SCAN #2115 Tuskegee AL · ANR-3180</small>
     </footer>
+  </div>
+
+  <div id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading field data…</div>
   </div>
 
   <script src="script.js"></script>
