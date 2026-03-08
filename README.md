@@ -7,9 +7,9 @@ Crop Vitals is an interactive field health monitoring dashboard that helps farme
 
 ## 🚜 Problem
 
-Challenge 1: Integrated operational dashboard with decision-ready alerts
+**Challenge 1:** *Integrated operational dashboard with decision-ready alerts
 Prompt: How can we integrate multiple data sources into a dashboard that prioritizes attention 
-and supports daily decisions?
+and supports daily decisions?*
 
 Modern agricultural data exists in silos. Satellite imagery, weather forecasts, soil sensors, and crop models are each powerful on their own — but farmers and extension agents have no single place to see them together, interpret them jointly, and act on them confidently
 
@@ -27,7 +27,7 @@ Crop Vitals monitors crop health using **seven vital signs** updated across clou
 | Crop Water Requirement | FAO-56 Penman-Monteith | Daily water demand (ET₀ × Kc) |
 | Temperature | NASA POWER | Heat stress indicator |
 
-These signals are combined into a **Crop Fitness Score (0–100)** using agronomic thresholds from ANR-3180 (Auburn Cooperative Extension) and FAO-56 rules.
+These signals are combined into a **Crop Vital Score (0–100)** using agronomic thresholds from ANR-3180 (Auburn Cooperative Extension) and FAO-56 rules.
 Crops covered include Cotton, Corn and Soybean
 
 
@@ -100,15 +100,18 @@ Final Score:  0–39 = 🔴 High Stress · 40–69 = 🟡 Moderate · 70–100 =
 - Integration of additional SCAN stations for spatial soil moisture variability
 - SSURGO/SoilGrids automated soil parameter retrieval
 - Mobile-responsive layout for field use on tablets
+- Develop a automated data pipeline and machine learning model to support scenario planning driven by user inputs.  
 
 
 
 ## 📚 References
+Pereira, L.S., Allen, R.G., Paredes, P., López-Urrea, R., Raes, D., Smith, M., Kilic, A. & Salman, M. 2025. Crop evapotranspiration – Guidelines for computing crop water requirements. Second edition, revised 2025. FAO Irrigation and Drainage Paper Revised December 2025, No.56 Rev.1. Rome, FAO. https://doi.org/10.4060/cd6621en
 
-- Pereira, L.S., Allen, R.G., Paredes, P., López-Urrea, R., Raes, D., Smith, M., Kilic, A. & Salman, M. 2025. Crop evapotranspiration – Guidelines for computing crop water requirements. Second edition, revised 2025. FAO Irrigation and Drainage Paper Revised December 2025, No.56 Rev.1. Rome, FAO. https://doi.org/10.4060/cd6621en
-- Nguyen, A., Sharma, A., & Prasad, R. (2025). Understanding Vegetation Indices Used in Precision Agriculture (ANR-3180). Alabama Cooperative Extension System, Auburn University.
+Nguyen, A., Sharma, A., & Prasad, R. (2025). Understanding Vegetation Indices Used in Precision Agriculture (ANR-3180). Alabama Cooperative Extension System, Auburn University.
+
+**Data Source Websites**
 - NASA POWER Project. https://power.larc.nasa.gov
-- USDA NRCS SCAN. Station #2115, Tuskegee AL. [https://wcc.sc.egov.usda.gov/nwcc/site?sitenum=2115&fbclid=IwY2xjawJg4RhleHRuA2FlbQIxMAABHmjFzBDmsn7m8owFmVnTy7jtFJJv5ZBNVCLz_VfrcUr4z0m4cxGcCR6gQpEe_aem_W7hTM0AWcz6yDfr1L_39Kw]
+- USDA NRCS SCAN. Station #2115, Tuskegee AL. https://wcc.sc.egov.usda.gov/nwcc/site?sitenum=2115&fbclid=IwY2xjawJg4RhleHRuA2FlbQIxMAABHmjFzBDmsn7m8owFmVnTy7jtFJJv5ZBNVCLz_VfrcUr4z0m4cxGcCR6gQpEe_aem_W7hTM0AWcz6yDfr1L_39Kw
 - Google Earth Engine. (n.d.). Earth Engine Data Catalog. https://developers.google.com/earth-engine/datasets (accessed on 7th March 2026).
 - ESA Sentinel-2 Mission. Copernicus Open Access Hub.
 
